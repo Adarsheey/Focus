@@ -18,6 +18,13 @@ router.get('/', (req, res) => {
       WHERE date(start_time) = date('now', 'localtime') AND user_id = ?
     `).get(req.user_id);
 
+    // Yesterday Focus Time
+    const yesterdayResult = db.prepare(`
+      SELECT SUM(actual_focus_time) as total_focus
+      FROM sessions
+      WHERE date(start_time) = date('now', '-1 day', 'localtime') AND user_id = ?
+    `).get(req.user_id);
+
     let focusScore = 0;
     if (scoreResult && scoreResult.total_time > 0) {
       focusScore = Math.round((scoreResult.total_focus / scoreResult.total_time) * 100);
@@ -60,6 +67,7 @@ router.get('/', (req, res) => {
       dailyTrends: dailyTrends || [],
       totalFocusSeconds: scoreResult ? (scoreResult.total_focus || 0) : 0,
       totalFocusSecondsToday: todayResult ? (todayResult.total_focus || 0) : 0,
+      yesterdayFocusSeconds: yesterdayResult ? (yesterdayResult.total_focus || 0) : 0,
       weekFocusSeconds: weekResult ? (weekResult.total_focus || 0) : 0,
       weekSessions: weekSessions || []
     });

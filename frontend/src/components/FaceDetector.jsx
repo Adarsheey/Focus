@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { FaceDetector, FilesetResolver } from '@mediapipe/tasks-vision';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function PresenceDetector({ onPresenceChange }) {
     const videoRef = useRef(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [error, setError] = useState('');
+    const [isHidden, setIsHidden] = useState(false);
     const detectorRef = useRef(null);
     const intervalRef = useRef(null);
 
@@ -64,15 +66,31 @@ export default function PresenceDetector({ onPresenceChange }) {
     }, [isLoaded, onPresenceChange]);
 
     return (
-        <div className="relative w-32 h-24 bg-black rounded-lg overflow-hidden border border-white/10 shadow-lg">
-            <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+        <div className="relative w-32 h-24 bg-black rounded-lg overflow-hidden border border-white/10 shadow-lg group">
+            <video ref={videoRef} className={`w-full h-full object-cover transition-opacity duration-300 ${isHidden ? 'opacity-0' : 'opacity-100'}`} autoPlay playsInline muted />
+
+            <button
+                onClick={() => setIsHidden(!isHidden)}
+                className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-black/90 rounded-md text-white/70 hover:text-white transition-all opacity-0 group-hover:opacity-100 z-20"
+                title={isHidden ? "Show Camera" : "Hide Camera"}
+            >
+                {isHidden ? <Eye size={14} /> : <EyeOff size={14} />}
+            </button>
+
+            {isHidden && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/95 text-[10px] text-textMuted z-10 pointer-events-none">
+                    <EyeOff size={16} className="mb-1 opacity-50" />
+                    Hidden
+                </div>
+            )}
+
             {!isLoaded && !error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80 text-[10px] text-center p-2 text-textMuted z-10 animate-pulse">
+                <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80 text-[10px] text-center p-2 text-textMuted z-10 animate-pulse pointer-events-none">
                     Starting Engine...
                 </div>
             )}
             {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-red-900/80 text-[10px] text-center p-2 text-red-200 z-10">
+                <div className="absolute inset-0 flex items-center justify-center bg-red-900/80 text-[10px] text-center p-2 text-red-200 z-10 pointer-events-none">
                     {error}
                 </div>
             )}

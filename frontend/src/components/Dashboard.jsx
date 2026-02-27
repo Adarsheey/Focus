@@ -1,12 +1,22 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Target, Clock, Zap } from 'lucide-react';
+import { Target, Clock, Zap, Medal } from 'lucide-react';
 import { fetchWithAuth } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard({ isActive }) {
     const { currentUser } = useAuth();
     const [data, setData] = useState(null);
+    const [dailyNotification, setDailyNotification] = useState(null);
+
+    // Rank logic: 0-59m (Bronze), 60-119m (Silver), 120-179m (Gold), 180m+ (Elite)
+    const getRankInfo = (totalSeconds) => {
+        const minutes = Math.floor(totalSeconds / 60);
+        if (minutes >= 180) return { name: 'Elite', color: 'text-purple-400', nextThreshold: null, currentMins: minutes };
+        if (minutes >= 120) return { name: 'Gold', color: 'text-yellow-400', nextThreshold: 180, currentMins: minutes };
+        if (minutes >= 60) return { name: 'Silver', color: 'text-gray-300', nextThreshold: 120, currentMins: minutes };
+        return { name: 'Bronze', color: 'text-amber-600', nextThreshold: 60, currentMins: minutes };
+    };
 
     useEffect(() => {
         if (!isActive || !currentUser) return;
@@ -42,6 +52,20 @@ export default function Dashboard({ isActive }) {
                 }
 
                 setData({ ...json, chartData });
+
+                // Daily Notification Logic
+                const todayStr = new Date().toDateString();
+                const lastSeen = localStorage.getItem('lastRankNotificationDate');
+
+                if (lastSeen !== todayStr) {
+                    const yesterdayRank = getRankInfo(json.yesterdayFocusSeconds || 0);
+                    setDailyNotification({
+                        show: true,
+                        message: `Yesterday you finished at ${yesterdayRank.name}. Let's see if you can beat that today!`
+                    });
+                    localStorage.setItem('lastRankNotificationDate', todayStr);
+                }
+
             } catch (e) { console.error(e); }
         };
         fetchAnalytics();
@@ -51,8 +75,19 @@ export default function Dashboard({ isActive }) {
 
     return (
         <div className="w-full max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {dailyNotification?.show && (
+                <div className="bg-blue-500/10 border border-blue-500/20 text-blue-200 p-4 rounded-xl flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3">
+                        <Medal className="text-blue-400" />
+                        <span>{dailyNotification.message}</span>
+                    </div>
+                    <button onClick={() => setDailyNotification({ ...dailyNotification, show: false })} className="text-blue-400 hover:text-blue-300">
+                        ✕
+                    </button>
+                </div>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     icon={<Zap className="text-yellow-400" />}
                     title="Overall Focus Score"
@@ -70,6 +105,16 @@ export default function Dashboard({ isActive }) {
                     title="Today's Focus Time"
                     value={data.totalFocusSecondsToday ? `${parseFloat((data.totalFocusSecondsToday / 60).toFixed(1))}m` : '0m'}
                     subtitle="Sum of today's sessions"
+                />
+                <StatCard
+                    icon={<Medal className={getRankInfo(data.totalFocusSecondsToday || 0).color} />}
+                    title="Daily Rank"
+                    value={getRankInfo(data.totalFocusSecondsToday || 0).name}
+                    subtitle={
+                        getRankInfo(data.totalFocusSecondsToday || 0).nextThreshold
+                            ? `${getRankInfo(data.totalFocusSecondsToday || 0).nextThreshold - getRankInfo(data.totalFocusSecondsToday || 0).currentMins}m to next rank`
+                            : "Max Rank Reached!"
+                    }
                 />
             </div>
 

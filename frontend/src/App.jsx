@@ -64,8 +64,8 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-background text-textMain flex flex-col items-center py-10 px-4">
         <header className="w-full max-w-4xl mb-8 flex justify-between items-center">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent fade-in">
-            FocusLoop AI
+          <h1 className="text-3xl font-extrabold tracking-tight text-white fade-in">
+            FocusForge
           </h1>
           <div className="flex items-center space-x-4">
             <nav className="flex space-x-2 bg-panel p-1 rounded-full border border-white/5 shadow-inner">
