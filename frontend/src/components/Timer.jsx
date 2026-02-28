@@ -56,14 +56,12 @@ export default function Timer({ selectedTaskId }) {
             setIsAutoPaused(false);
         }
     }, [isFacePresent, isAutoPaused, mode]);
-
     const handleComplete = async () => {
         if (mode === 'focus') {
             if (selectedTaskId) {
                 try {
-                    await fetchWithAuth('http://localhost:3001/api/sessions', {
+                    await fetchWithAuth('/api/sessions', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             task_id: selectedTaskId,
                             start_time: new Date(Date.now() - stats.totalSession * 1000).toISOString(),
@@ -72,15 +70,20 @@ export default function Timer({ selectedTaskId }) {
                             total_session_time: stats.totalSession
                         })
                     });
-                } catch (e) { console.error('Failed to log session', e); }
+                } catch (e) {
+                    console.error('Failed to log session', e);
+                }
             }
+
             setMode('break');
             setTimeLeft(breakDuration * 60);
             setStats({ actualFocus: 0, totalSession: 0 });
+
         } else {
             setMode('focus');
             setTimeLeft(focusDuration * 60);
         }
+
         setIsAutoPaused(false);
     };
 

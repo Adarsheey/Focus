@@ -7,3 +7,5 @@ build
 *.log
 # Firebase Admin secret
 backend/*firebase-adminsdk*.json
+# Local database
+backend/*.db

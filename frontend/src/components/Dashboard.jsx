@@ -22,7 +22,7 @@ export default function Dashboard({ isActive }) {
         if (!isActive || !currentUser) return;
         const fetchAnalytics = async () => {
             try {
-                const res = await fetchWithAuth('http://localhost:3001/api/analytics');
+                const res = await fetchWithAuth("/api/analytics");
                 const json = await res.json();
                 const now = new Date();
                 const startOfWeek = new Date(now);
