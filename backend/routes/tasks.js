@@ -1,39 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const pool = require('../db');
 
 // Get all tasks
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const tasks = db.prepare('SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC').all(req.user_id);
-        res.json(tasks);
+        const result = await pool.query(
+            'SELECT * FROM tasks WHERE user_id = $1 ORDER BY id DESC',
+            [req.user_id]
+        );
+
+        res.json(result.rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
 // Create a new task
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { title } = req.body;
-    if (!title) return res.status(400).json({ error: 'Title is required' });
+
+    if (!title) {
+        return res.status(400).json({ error: 'Title is required' });
+    }
 
     try {
-        const stmt = db.prepare('INSERT INTO tasks (title, user_id) VALUES (?, ?)');
-        const info = stmt.run(title, req.user_id);
-        res.json({ id: Number(info.lastInsertRowid), title, status: 'pending' });
+        const result = await pool.query(
+            'INSERT INTO tasks (title, user_id, status) VALUES ($1, $2, $3) RETURNING *',
+            [title, req.user_id, 'pending']
+        );
+
+        res.json(result.rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
 // Update a task
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     const { status } = req.body;
     const { id } = req.params;
 
     try {
-        const stmt = db.prepare('UPDATE tasks SET status = ? WHERE id = ? AND user_id = ?');
-        stmt.run(status, id, req.user_id);
+        await pool.query(
+            'UPDATE tasks SET status = $1 WHERE id = $2 AND user_id = $3',
+            [status, id, req.user_id]
+        );
+
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -41,12 +54,15 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete a task
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const stmt = db.prepare('DELETE FROM tasks WHERE id = ? AND user_id = ?');
-        stmt.run(id, req.user_id);
+        await pool.query(
+            'DELETE FROM tasks WHERE id = $1 AND user_id = $2',
+            [id, req.user_id]
+        );
+
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
